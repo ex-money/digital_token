@@ -1,22 +1,32 @@
 # Changelog
 
-## Unreleased
+## Digital Token 2.1.0
+
+This is the changelog for Digital Token version 2.1.0 released on September 21st, 2026.  For older changelogs please consult the release tag on [GitHub](https://github.com/kipcole9/digital_token/tags)
 
 ### Bug Fixes
 
-* `DigitalToken.symbol/2` returns the Unicode symbol for `ETH` again. The bundled symbol data was generated against an older registry in which the short name `ETH` resolved to "Eth on Blast", so "Ethereum Ether" (the token `ETH` resolves to since the 2.0.0 registry) had no symbol. Regenerated with `mix digital_token.symbols.update`; that task must be re-run after every registry update.
+* Short name and long name lookups resolve the same token on every OTP release. An ambiguous name resolves by token type (native first), then curated symbol, then ascending token identifier, and `DigitalToken.search/1` returns the candidates in that order, winner first.
+
+* `DigitalToken.symbol/2` returns the curated symbol for `ETH`, `BCH` and `EOS` again. The bundled symbol data is regenerated and keyed to Ethereum Ether, Bitcoin Cash and EOS rather than to layer-two deployments of them.
 
 ### Enhancements
 
 * Adds the standard GitHub Actions CI workflow (Elixir 1.17–1.20 across OTP 26–29, with formatting and dialyzer on the lint row).
 
+* `DigitalToken.validate_token/2` and `DigitalToken.get_token/1` document how an ambiguous name resolves, and the README gains a section on ambiguous short names.
+
 ## Digital Token 2.0.0
 
-This is the changelog for Digital Token version 2.0.0 released on April 24th, 2024.  For older changelogs please consult the release tag on [GitHub](https://github.com/kipcole9/digital_token/tags)
+This is the changelog for Digital Token version 2.0.0 released on April 24th, 2026.  For older changelogs please consult the release tag on [GitHub](https://github.com/kipcole9/digital_token/tags)
 
 ### Breaking Changes
 
 * dtif.org has moved to a paywall model requiring several thousand euros a year to access the full registry data. Fortunately they do maintain a publically available extract which is enough to support this library. However even that data is not accessible programmatically. Therefore the data is only updated when a maintainer downloads it manually.  As a result, the data is tied to the package release which is not a good long time solution. Like the Localize solution, the next release of digital_token will generate an .etf file of the content we need and store in in R2.
+
+### Enhancements
+
+* `DigitalToken.search/1` and `DigitalToken.search/2` return every token that carries a short name or long name, and `DigitalToken.validate_token/2` accepts a `:dti_type` option to restrict a name lookup to one token type.
 
 ## Digital Token 1.0.0
 

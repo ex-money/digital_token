@@ -3,14 +3,24 @@ defmodule DigitalToken do
   Functions to validate, search and retrieve digital token
   data sourced from the [DTIF registry](https://dtif.org).
 
+  A token is identified by its nine character token identifier
+  (DTI), which is unique. Short names such as "BTC" and long
+  names such as "Bitcoin" are informative and are not unique:
+  the same short name is carried by native tokens on several
+  chains, by wrapped tokens and by fungible token groups.
+  `validate_token/2`, `get_token/1` and the other functions that
+  accept a name resolve it to one token with a documented, stable
+  precedence; `search/1` and `search/2` return every token that
+  carries a name so a caller can choose.
+
   """
 
-  defstruct [
-    header: nil,
-    informative: nil,
-    metadata: nil,
-    normative: nil
-  ]
+  @token_types [:native, :auxiliary, :distributed, :fungible]
+
+  defstruct header: nil,
+            informative: nil,
+            metadata: nil,
+            normative: nil
 
   @typedoc """
   The structure of data matching that hosted in
@@ -18,11 +28,11 @@ defmodule DigitalToken do
 
   """
   @type t :: %__MODULE__{
-    header: map(),
-    informative: map(),
-    metadata: map(),
-    normative: map()
-  }
+          header: map(),
+          informative: map(),
+          metadata: map(),
+          normative: map()
+        }
 
   @typedoc """
   token_id is a random 9-character
@@ -52,17 +62,18 @@ defmodule DigitalToken do
 
   """
   @type token_map :: %{
-    token_id() => t()
-  }
+          token_id() => t()
+        }
 
   @typedoc """
-  A mapping from a short name to token
-  identifier.
+  A mapping from a short name or long name,
+  paired with a token type, to the token identifier
+  that name resolves to for that type.
 
   """
   @type short_name_map :: %{
-    {token_id(), token_type} => token_id()
-  }
+          {short_name(), token_type} => token_id()
+        }
 
   @typedoc """
   A mapping of digital token identifiers
@@ -70,8 +81,8 @@ defmodule DigitalToken do
 
   """
   @type symbol_map :: %{
-    token_id() => String.t()
-  }
+          token_id() => String.t()
+        }
 
   defguard is_digital_token(token_id) when is_binary(token_id) and byte_size(token_id) == 9
 
@@ -106,11 +117,12 @@ defmodule DigitalToken do
   end
 
   @doc """
-  Returns a list of all tokens matching the given short name or long name.
+  Returns every token that carries the given short name or long name.
 
-  Since many tokens share the same short name (e.g. "ETH" appears as
-  a native token, as wrapped tokens on various chains, and in fungible
-  groups), this function returns all matches to support disambiguation.
+  Many tokens share a short name. "ETH", for example, names a native
+  token on Ethereum and on each of its layer-two chains, wrapped tokens
+  on other chains, and fungible token groups. This function returns all
+  of them so a caller can choose.
 
   ## Arguments
 
@@ -118,14 +130,27 @@ defmodule DigitalToken do
 
   ## Returns
 
-  * A list of `{token_id, dti_type}` tuples, or an empty list if no
-    tokens match.
+  * A list of `{token_id, dti_type}` tuples in resolution order, or an
+    empty list if no tokens match. The first entry is the token that
+    `validate_token/2` and `get_token/1` resolve the name to. The order
+    is native before auxiliary before distributed before fungible and,
+    within a type, tokens with a curated symbol before those without,
+    then ascending token identifier.
 
   ## Examples
 
-      iex> [{id, :native}] = DigitalToken.search("Bitcoin") |> Enum.filter(fn {_, t} -> t == :native end)
-      iex> id
-      "4H95J0R2X"
+      iex> DigitalToken.search("Bitcoin") |> hd()
+      {"4H95J0R2X", :native}
+
+      iex> DigitalToken.search("ONT")
+      [
+        {"7Z13NV2QM", :auxiliary},
+        {"R9LRZNL89", :auxiliary},
+        {"WS6SFQ5D1", :auxiliary},
+        {"G7LQ0V9FF", :fungible},
+        {"HJVWQ4S40", :fungible},
+        {"M2W3DQB67", :fungible}
+      ]
 
       iex> DigitalToken.search("Nothing")
       []
@@ -137,10 +162,11 @@ defmodule DigitalToken do
   end
 
   @doc """
-  Returns a list of all tokens matching the given name and token type.
+  Returns every token of one type that carries the given short name
+  or long name.
 
-  This is useful to narrow results when a short name like `"ETH"` maps to
-  many tokens across different types.
+  This narrows the result of `search/1` when a short name like `"ETH"`
+  maps to many tokens across different types.
 
   ## Arguments
 
@@ -151,22 +177,26 @@ defmodule DigitalToken do
   ## Returns
 
   * A list of `{token_id, dti_type}` tuples matching both the name and
-    the type, or an empty list if no tokens match.
+    the type, in the same order as `search/1`, or an empty list if no
+    tokens match.
 
   ## Examples
 
-      iex> DigitalToken.search("ETH", :native) |> length() > 1
-      true
+      iex> DigitalToken.search("ETH", :native) |> hd()
+      {"X9J9K872S", :native}
 
       iex> DigitalToken.search("BTC", :native)
       [{"4H95J0R2X", :native}]
+
+      iex> DigitalToken.search("ONT", :fungible)
+      [{"G7LQ0V9FF", :fungible}, {"HJVWQ4S40", :fungible}, {"M2W3DQB67", :fungible}]
 
       iex> DigitalToken.search("Nothing", :native)
       []
 
   """
   @spec search(String.t(), token_type()) :: [{token_id(), token_type()}]
-  def search(name, dti_type) when is_binary(name) and dti_type in [:native, :auxiliary, :distributed, :fungible] do
+  def search(name, dti_type) when is_binary(name) and dti_type in @token_types do
     name
     |> search()
     |> Enum.filter(fn {_id, type} -> type == dti_type end)
@@ -184,17 +214,28 @@ defmodule DigitalToken do
 
   ## Options
 
-  * `:dti_type` specifies the token type to match when looking up
-    by short name or long name. One of `:native`, `:auxiliary`,
-    `:distributed`, or `:fungible`. When not specified, the lookup
-    tries each type in the following priority order: `:native`,
-    `:auxiliary`, `:distributed`, `:fungible`. The first match wins.
+  * `:dti_type` restricts a short name or long name lookup to one
+    token type: `:native`, `:auxiliary`, `:distributed` or `:fungible`.
 
   ## Returns
 
   * `{:ok, token_id}` or
 
   * `{:error, {exception, id}}`
+
+  ## Resolving ambiguous names
+
+  Short names and long names are not unique in the registry. "ETH",
+  for example, names a dozen native tokens (Ethereum Ether and one per
+  layer-two chain) as well as many wrapped and fungible tokens. When
+  `id` is not a token identifier, the first entry returned by
+  `search/1` (or by `search/2` when `:dti_type` is given) wins. That
+  order is native before auxiliary before distributed before fungible
+  and, within a type, tokens with a curated symbol before those
+  without, then ascending token identifier. It depends only on the
+  registry data, so the same name resolves to the same token on every
+  OTP release. Callers that need a specific token should pass the
+  token identifier, or choose one from `search/1`.
 
   ## Examples
 
@@ -207,40 +248,42 @@ defmodule DigitalToken do
       iex> DigitalToken.validate_token "4H95J0R2X"
       {:ok, "4H95J0R2X"}
 
+      iex> DigitalToken.validate_token("ONT")
+      {:ok, "7Z13NV2QM"}
+
+      iex> DigitalToken.validate_token("ONT", dti_type: :fungible)
+      {:ok, "G7LQ0V9FF"}
+
+      iex> DigitalToken.validate_token("BTC", dti_type: :distributed)
+      {:error, {DigitalToken.UnknownTokenError, "BTC"}}
+
       iex> DigitalToken.validate_token("Nothing")
       {:error, {DigitalToken.UnknownTokenError, "Nothing"}}
 
   """
   @spec validate_token(token_id() | short_name(), Keyword.t()) ::
-    {:ok, token_id()} | {:error, {module(), any()}}
+          {:ok, token_id()} | {:error, {module(), any()}}
   def validate_token(id, options \\ []) do
-    dti_type = Keyword.get(options, :dti_type)
-
-    cond do
-      Map.has_key?(tokens(), id) ->
-        {:ok, id}
-
-      dti_type != nil ->
-        case Map.get(short_names(), {id, dti_type}) do
-          nil -> {:error, unknown_token_error(id)}
-          token -> {:ok, token}
-        end
-
-      token = Map.get(short_names(), {id, :native}) ->
-        {:ok, token}
-
-      token = Map.get(short_names(), {id, :auxiliary}) ->
-        {:ok, token}
-
-      token = Map.get(short_names(), {id, :distributed}) ->
-        {:ok, token}
-
-      token = Map.get(short_names(), {id, :fungible}) ->
-        {:ok, token}
-
-      true ->
-        {:error, unknown_token_error(id)}
+    if Map.has_key?(tokens(), id) do
+      {:ok, id}
+    else
+      case candidates(id, Keyword.get(options, :dti_type)) do
+        [{token_id, _dti_type} | _rest] -> {:ok, token_id}
+        [] -> {:error, unknown_token_error(id)}
+      end
     end
+  end
+
+  defp candidates(name, nil) when is_binary(name) do
+    search(name)
+  end
+
+  defp candidates(name, dti_type) when is_binary(name) and dti_type in @token_types do
+    search(name, dti_type)
+  end
+
+  defp candidates(_name, _dti_type) do
+    []
   end
 
   @doc """
@@ -270,7 +313,7 @@ defmodule DigitalToken do
       {:ok, "LUNC"}
 
   """
-  @spec short_name(token_id) :: {:ok, String.t()} | {:error, {module(), String.t}}
+  @spec short_name(token_id) :: {:ok, String.t()} | {:error, {module(), String.t()}}
   def short_name(token_id) do
     with {:ok, token} <- get_token(token_id) do
       case Map.get(token.informative, :short_names) do
@@ -306,7 +349,7 @@ defmodule DigitalToken do
       {:ok, "Terra Classic"}
 
   """
-  @spec long_name(token_id) :: {:ok, String.t()} | {:error, {module(), String.t}}
+  @spec long_name(token_id) :: {:ok, String.t()} | {:error, {module(), String.t()}}
   def long_name(token_id) do
     with {:ok, token} <- get_token(token_id) do
       Map.fetch(token.informative, :long_name)
@@ -356,7 +399,7 @@ defmodule DigitalToken do
       {:error, {DigitalToken.UnknownTokenError, "DODGY"}}
 
   """
-  @spec symbol(token_id, 1..4) :: {:ok, String.t()} | {:error, {module(), String.t}}
+  @spec symbol(token_id, 1..4) :: {:ok, String.t()} | {:error, {module(), String.t()}}
   def symbol(token_id, style) when style in [1, 4] do
     with {:ok, token_id} <- validate_token(token_id),
          {:ok, symbol} <- Map.fetch(symbols(), token_id) do
@@ -367,7 +410,7 @@ defmodule DigitalToken do
     end
   end
 
-  def symbol(token_id, 2)  do
+  def symbol(token_id, 2) do
     short_name(token_id)
   end
 
@@ -381,7 +424,9 @@ defmodule DigitalToken do
 
   ## Arguments
 
-  * `id` is any token identifier or short name
+  * `id` is any token identifier, short name or long name. A name
+    that several tokens carry resolves as described in
+    `validate_token/2`; use `search/1` to see every candidate.
 
   ## Returns
 

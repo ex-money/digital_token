@@ -67,29 +67,48 @@ defmodule DigitalToken.Decode do
     %{dti => map}
   end
 
-  def short_names(data) do
-    Enum.flat_map(data, fn {token, values} ->
-      short_names = values.informative.short_names
-      dti_type = Map.get(values.header, :dti_type, :native)
+  @type_priority %{native: 0, auxiliary: 1, distributed: 2, fungible: 3}
 
-      [{{values.informative.long_name, dti_type}, token} |
-        Enum.map(short_names, &{{&1, dti_type}, token})]
+  # Maps every long name and short name to the tokens that carry it,
+  # as `{token_id, dti_type}` pairs in resolution order: native before
+  # auxiliary before distributed before fungible and, within a type,
+  # tokens with a curated symbol before those without, then ascending
+  # token id. The order depends only on the data, never on map
+  # traversal order, so a name resolves identically on every OTP release.
+
+  def search_index(data, symbols) do
+    data
+    |> Enum.flat_map(fn {token_id, values} ->
+      dti_type = Map.get(values.header, :dti_type, :native)
+      for name <- names(values), do: {name, {token_id, dti_type}}
     end)
-    |> Map.new()
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Map.new(fn {name, matches} ->
+      {name, Enum.sort_by(matches, &resolution_order(&1, symbols))}
+    end)
   end
 
-  def search_index(data) do
-    Enum.reduce(data, %{}, fn {token_id, values}, acc ->
-      short_names = values.informative.short_names
-      long_name = values.informative.long_name
-      dti_type = Map.get(values.header, :dti_type, :native)
+  # Maps `{name, dti_type}` to the token that name resolves to for that
+  # type: the first entry of that type in the search index.
 
-      names = [long_name | short_names] |> Enum.reject(&is_nil/1) |> Enum.uniq()
-
-      Enum.reduce(names, acc, fn name, inner_acc ->
-        Map.update(inner_acc, name, [{token_id, dti_type}], &[{token_id, dti_type} | &1])
+  def short_names(search_index) do
+    Enum.reduce(search_index, %{}, fn {name, matches}, acc ->
+      Enum.reduce(matches, acc, fn {token_id, dti_type}, inner_acc ->
+        Map.put_new(inner_acc, {name, dti_type}, token_id)
       end)
     end)
+  end
+
+  defp names(values) do
+    [values.informative.long_name | values.informative.short_names]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+  end
+
+  defp resolution_order({token_id, dti_type}, symbols) do
+    type_rank = Map.get(@type_priority, dti_type, map_size(@type_priority))
+    symbol_rank = if Map.has_key?(symbols, token_id), do: 0, else: 1
+    {type_rank, symbol_rank, token_id}
   end
 
   defp merge_map_list(maps) do

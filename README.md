@@ -30,6 +30,35 @@ DOGE      |	4 |	Dogecoin	  | DOGE is of non-standard length.
 ETH       | 18|	Ethereum	  | ETH conflicts with ISO 4217, because ET stands for Ethiopia.
 LTC       | 8 |	Litecoin	  | LTC conflicts with ISO 4217, because LT stands for Lithuania.
 
+### Ambiguous short names
+
+Only the nine character token identifier is unique. Short names and long names are informative: "ETH" is carried by Ethereum Ether, by the native token of each Ethereum layer-two chain, and by wrapped and fungible tokens on other chains. `DigitalToken.get_token/1` and `DigitalToken.validate_token/2` resolve a name to one token with a fixed precedence (native tokens first, then tokens with a curated symbol, then the lowest token identifier), and `DigitalToken.search/1` lists every candidate in that order so an application can choose:
+
+```elixir
+iex> DigitalToken.validate_token("ONT")
+{:ok, "7Z13NV2QM"}
+
+iex> DigitalToken.long_name("7Z13NV2QM")
+{:ok, "Ontology"}
+
+iex> DigitalToken.search("ONT")
+[
+  {"7Z13NV2QM", :auxiliary},
+  {"R9LRZNL89", :auxiliary},
+  {"WS6SFQ5D1", :auxiliary},
+  {"G7LQ0V9FF", :fungible},
+  {"HJVWQ4S40", :fungible},
+  {"M2W3DQB67", :fungible}
+]
+
+iex> DigitalToken.validate_token("ONT", dti_type: :fungible)
+{:ok, "G7LQ0V9FF"}
+```
+
+### Scope
+
+This library is a read-only view of the DTIF registry. It has no facility to define tokens that are not in the registry. An application that needs a private token can define a custom currency with [`Money.new/3`](https://hexdocs.pm/ex_money/Money.html#new/3) in `ex_money` instead.
+
 ### Installation
 
 The package can be installed by adding `digital_token` to your list of dependencies in `mix.exs`:
