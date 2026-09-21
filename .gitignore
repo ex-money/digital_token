@@ -27,3 +27,5 @@ digital_token-*.tar
 
 # The downloaded registry data
 DTI_Data_20260301.json
+
+.DS_Store
