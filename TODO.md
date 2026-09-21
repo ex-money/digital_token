@@ -4,11 +4,11 @@ Work on `digital_token`. Design notes, when there are any, live in `plans/`.
 
 ## Open
 
-* [ ] **Reply to and close issues #3 and #5** — drafts are in the 2026-09-21 session report; #3 is out of scope by design, #5 is fixed by the deterministic name resolution.
-
-* [ ] **Release the deterministic resolution fix** — the Unreleased changelog section is written; the change alters which token some ambiguous names resolve to, so a minor bump (2.1.0) is the honest version.
+* [ ] **Publish 2.1.0** — release review passed on 2026-09-21; commit the review fixes, tag `v2.1.0`, run `mix hex.publish`.
 
 ## Done
+
+* [x] **Reply to and close issues #3 and #5** — #3 out of scope by design, #5 fixed by deterministic name resolution. 2026-09-21.
 
 * [x] **Deterministic short name resolution** — ambiguous names resolve by type, curated symbol, then token identifier on every OTP release; `search/1` returns candidates winner first. 2026-09-21.
 

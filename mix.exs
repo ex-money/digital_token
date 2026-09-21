@@ -76,6 +76,10 @@ defmodule DigitalToken.MixProject do
       extras: ["README.md", "CHANGELOG.md", "LICENSE.md"],
       logo: "logo.png",
       formatters: ["html", "markdown"],
+      groups_for_modules: [
+        Exceptions: [DigitalToken.UnknownTokenError],
+        "Mix tasks": [Mix.Tasks.DigitalToken.Symbols.Update]
+      ],
       skip_undefined_reference_warnings_on: ["changelog", "CHANGELOG.md"]
     ]
   end

@@ -66,7 +66,7 @@ The package can be installed by adding `digital_token` to your list of dependenc
 ```elixir
 def deps do
   [
-    {:digital_token, "~> 2.0.0"}
+    {:digital_token, "~> 2.1"}
   ]
 end
 ```

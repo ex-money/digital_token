@@ -90,6 +90,19 @@ defmodule DigitalToken do
   Returns a map of the digital tokens in the
   [dtif registry](https://dtif.org).
 
+  ### Returns
+
+  * A map from token identifier to the `t:t/0` registry
+    data for that token.
+
+  ### Examples
+
+      iex> DigitalToken.tokens() |> Map.fetch!("4H95J0R2X") |> Map.fetch!(:informative) |> Map.fetch!(:long_name)
+      "Bitcoin"
+
+      iex> DigitalToken.tokens() |> map_size() > 5000
+      true
+
   """
   @spec tokens :: token_map()
   def tokens do
@@ -98,7 +111,21 @@ defmodule DigitalToken do
 
   @doc """
   Returns a mapping of digital token short
-  names to digital token identifiers.
+  names and long names to digital token identifiers.
+
+  ### Returns
+
+  * A map from `{name, dti_type}` to the token identifier
+    that name resolves to for that type, following the
+    precedence described in `validate_token/2`.
+
+  ### Examples
+
+      iex> DigitalToken.short_names() |> Map.fetch!({"BTC", :native})
+      "4H95J0R2X"
+
+      iex> DigitalToken.short_names() |> Map.fetch!({"ONT", :auxiliary})
+      "7Z13NV2QM"
 
   """
   @spec short_names :: short_name_map()
@@ -108,7 +135,21 @@ defmodule DigitalToken do
 
   @doc """
   Returns a mapping of digital token identifiers
-  names to a currency symbol.
+  to a currency symbol.
+
+  ### Returns
+
+  * A map from token identifier to the curated Unicode
+    symbol for that token. Only well-known tokens have
+    an entry.
+
+  ### Examples
+
+      iex> DigitalToken.symbols() |> Map.fetch!("4H95J0R2X")
+      "₿"
+
+      iex> DigitalToken.symbols() |> Map.has_key?("7Z13NV2QM")
+      false
 
   """
   @spec symbols :: symbol_map()

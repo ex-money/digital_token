@@ -11,4 +11,9 @@ defmodule DigitalToken.UnknownTokenError do
     message = "The token #{inspect(id)} is not known"
     %__MODULE__{message: message}
   end
+
+  def exception(id) do
+    message = "The token #{inspect(id)} is not known"
+    %__MODULE__{message: message}
+  end
 end
