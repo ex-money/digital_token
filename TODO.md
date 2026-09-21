@@ -2,11 +2,9 @@
 
 Work on `digital_token`. Design notes, when there are any, live in `plans/`.
 
-## Open
-
-* [ ] **Publish 2.1.0** — release review passed on 2026-09-21; commit the review fixes, tag `v2.1.0`, run `mix hex.publish`.
-
 ## Done
+
+* [x] **Publish 2.1.0** — deterministic name resolution, re-keyed symbols, CI workflow. 2026-09-21, v2.1.0.
 
 * [x] **Reply to and close issues #3 and #5** — #3 out of scope by design, #5 fixed by deterministic name resolution. 2026-09-21.
 
