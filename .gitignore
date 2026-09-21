@@ -29,3 +29,6 @@ digital_token-*.tar
 DTI_Data_20260301.json
 
 .DS_Store
+
+# Session context written by Claude; personal, never committed.
+CLAUDE.local.md

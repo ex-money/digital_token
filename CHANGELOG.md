@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Bug Fixes
+
+* `DigitalToken.symbol/2` returns the Unicode symbol for `ETH` again. The bundled symbol data was generated against an older registry in which the short name `ETH` resolved to "Eth on Blast", so "Ethereum Ether" (the token `ETH` resolves to since the 2.0.0 registry) had no symbol. Regenerated with `mix digital_token.symbols.update`; that task must be re-run after every registry update.
+
+### Enhancements
+
+* Adds the standard GitHub Actions CI workflow (Elixir 1.17–1.20 across OTP 26–29, with formatting and dialyzer on the lint row).
+
 ## Digital Token 2.0.0
 
 This is the changelog for Digital Token version 2.0.0 released on April 24th, 2024.  For older changelogs please consult the release tag on [GitHub](https://github.com/kipcole9/digital_token/tags)
