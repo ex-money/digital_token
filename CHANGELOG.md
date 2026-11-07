@@ -1,5 +1,13 @@
 # Changelog
 
+## Digital Token 2.1.1
+
+This is the changelog for Digital Token version 2.1.1 released on November 8th, 2026.  For older changelogs please consult the release tag on [GitHub](https://github.com/kipcole9/digital_token/tags)
+
+### Bug Fixes
+
+* Fix applications failing to start on OTP 26 with "could not find application file: json_polyfill.app". The `json_polyfill` dependency is removed because only `mix digital_token.symbols.update` decodes JSON, and that task now says it needs OTP 27 or later.
+
 ## Digital Token 2.1.0
 
 This is the changelog for Digital Token version 2.1.0 released on September 21st, 2026.  For older changelogs please consult the release tag on [GitHub](https://github.com/kipcole9/digital_token/tags)

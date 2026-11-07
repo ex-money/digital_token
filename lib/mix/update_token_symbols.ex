@@ -10,6 +10,9 @@ defmodule Mix.Tasks.DigitalToken.Symbols.Update do
 
   If no path is given, fetches from the GitHub source URL.
 
+  The task decodes JSON with OTP's `:json` module, so it needs
+  OTP 27 or later.
+
   """
 
   use Mix.Task
@@ -23,8 +26,14 @@ defmodule Mix.Tasks.DigitalToken.Symbols.Update do
 
   @doc false
   def run(args) do
-    require Logger
+    if Code.ensure_loaded?(:json) do
+      update(args)
+    else
+      Mix.raise("mix digital_token.symbols.update needs OTP 27 or later for the :json module")
+    end
+  end
 
+  defp update(args) do
     case args do
       [path] ->
         update_from_file(path)

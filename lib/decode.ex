@@ -5,6 +5,11 @@ defmodule DigitalToken.Decode do
   # data into a format useful for looking up registry
   # data.
 
+  # JSON is decoded only by the data update task, with OTP's `:json`
+  # module (OTP 27 and later). The library itself reads the bundled
+  # ETF files, so it compiles and runs on OTP 26 without `:json`.
+  @compile {:no_warn_undefined, :json}
+
   @priv_dir Application.app_dir(:digital_token, "priv")
   @tokens_file_name Path.join(@priv_dir, "digital_token_registry.etf")
   @symbols_file_name Path.join(@priv_dir, "digital_token_symbols.etf")

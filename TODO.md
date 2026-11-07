@@ -2,6 +2,10 @@
 
 Work on `digital_token`. Design notes, when there are any, live in `plans/`.
 
+## In progress
+
+* [ ] **Publish 2.1.1** — fixes starting on OTP 26: the `json_polyfill` dependency, added only when compiled on OTP 26 and so missing from the hex metadata, is removed. Not yet published.
+
 ## Done
 
 * [x] **Publish 2.1.0** — deterministic name resolution, re-keyed symbols, CI workflow. 2026-09-21, v2.1.0.

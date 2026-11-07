@@ -1,7 +1,7 @@
 defmodule DigitalToken.MixProject do
   use Mix.Project
 
-  @version "2.1.0"
+  @version "2.1.1"
 
   def project do
     [
@@ -41,15 +41,7 @@ defmodule DigitalToken.MixProject do
     [
       {:ex_doc, "~> 0.18", only: [:dev, :release], optional: true, runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
-    ] ++ maybe_json_polyfill()
-  end
-
-  defp maybe_json_polyfill do
-    if Code.ensure_loaded?(:json) do
-      []
-    else
-      [{:json_polyfill, "~> 0.2 or ~> 1.0"}]
-    end
+    ]
   end
 
   defp package do
